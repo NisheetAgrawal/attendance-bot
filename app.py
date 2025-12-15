@@ -51,7 +51,7 @@ import re
 # Match "in", "In", "IN", "iN" (case insensitive, allowing whitespace around)
 # Strict Match: Start of string ^, "in" (case-insensitive), End of string $
 # Allows whitespace logic like " in " or "In" but REJECTS "I am in"
-@app.message(re.compile(r"^\s*(?i)in\s*$"))
+@app.message(re.compile(r"^\s*in\s*$", re.IGNORECASE))
 def handle_attendance(message, say, logger):
     user_id = message['user']
     
