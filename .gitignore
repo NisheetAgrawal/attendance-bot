@@ -1,0 +1,32 @@
+# Secrets
+.env
+credentials.json
+token.json
+client_secret.json
+
+# Logs
+*.log
+*.err
+launch.err
+launch.log
+bot.log
+ngrok.log
+ngrok_final.log
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.pytest_cache/
+
+# System
+.DS_Store
+.idea/
+.vscode/
+
+# Local Scripts (Not for cloud)
+start_bot.sh
+com.attendance.bot.plist
+get_*.py
+verify_setup.py
+setup_employees.py
