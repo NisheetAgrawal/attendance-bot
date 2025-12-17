@@ -97,11 +97,12 @@ def handle_attendance(message, say, logger):
     except Exception as e:
         say(f"❌ Error logging to sheet: {str(e)}", thread_ts=message['ts'])
 
-# Match "mark absent" (case insensitive, strict match)
-@app.message(re.compile(r"^\s*mark\s+absent\s*$", re.IGNORECASE))
-def handle_absent_trigger(message, say):
-    say(f"🕵️‍♂️ Checking for absentees...", thread_ts=message['ts'])
+# Match "mark absent" (case insensitive, strict match but tolerant of internal spaces)
+@app.message(re.compile(r"mark\s+absent", re.IGNORECASE))
+def handle_absent_trigger(message, say, logger):
+    logger.info(f"received 'mark absent' trigger from user {message['user']}")
     try:
+        say(f"🕵️‍♂️ Checking for absentees...", thread_ts=message['ts'])
         absent_list = mark_absent_employees()
         if not absent_list:
             say("✅ Everyone is present today!", thread_ts=message['ts'])
@@ -109,7 +110,13 @@ def handle_absent_trigger(message, say):
             names_str = ", ".join(absent_list)
             say(f"🔴 Marked {len(absent_list)} people as Absent:\n{names_str}", thread_ts=message['ts'])
     except Exception as e:
+        logger.error(f"Failed to handle absent trigger: {e}")
         say(f"❌ Error running absentee check: {e}", thread_ts=message['ts'])
+
+# Fallback listener for debugging
+@app.message(re.compile(r"absent", re.IGNORECASE))
+def debug_absent(message, logger):
+    logger.info(f"Ignored broad 'absent' message: {message['text']}")
 
 @flask_app.route("/slack/events", methods=["POST"])
 def slack_events():
