@@ -19,7 +19,7 @@ def mark_absent_employees(target_date=None):
     handler = SheetsHandler("credentials.json", SHEET_ID)
     if not handler.sheet:
         print("❌ Error: Could not connect to sheet.")
-        return [], {}
+        return [], {"error": "Could not connect to Google Sheet (Check ID)"}
 
     # 1. Get all employees
     try:
@@ -33,8 +33,9 @@ def mark_absent_employees(target_date=None):
         try:
             name_idx = next(i for i, h in enumerate(norm_emp_headers) if h in ["name", "employee name", "employee"])
         except StopIteration:
-             print(f"❌ Error: 'Name' column missing in Employees tab. Found: {emp_headers}")
-             return [], {}
+             msg = f"'Name' col missing in Employees. Found: {emp_headers}"
+             print(f"❌ {msg}")
+             return [], {"error": msg}
              
         all_names = [row[name_idx] for row in emp_rows[1:] if len(row) > name_idx and row[name_idx]]
     except Exception as e:
@@ -56,8 +57,7 @@ def mark_absent_employees(target_date=None):
         # Use get_all_values() to avoid "Duplicate Header" errors from gspread
         all_rows = handler.sheet.get_all_values()
         if not all_rows:
-            print("❌ Error: Sheet is empty")
-            return [], {}
+            return [], {"error": "Main Sheet is empty/blank"}
             
         headers = all_rows[0]
         # Normalize headers for finding (strip whitespace, lowercase)
@@ -71,8 +71,9 @@ def mark_absent_employees(target_date=None):
             date_idx = next(i for i, h in enumerate(norm_headers) if h in date_col_aliases)
             name_idx = next(i for i, h in enumerate(norm_headers) if h in name_col_aliases)
         except StopIteration:
-            print(f"❌ Error: Could not find Date/Name columns. Found headers: {headers}")
-            return [], {}
+            msg = f"Columns missing. Looked for Date/Name. Found: {headers}"
+            print(f"❌ {msg}")
+            return [], {"error": msg}
 
         attendance_records = all_rows[1:]
         

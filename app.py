@@ -112,7 +112,14 @@ def handle_absent_trigger(message, say, logger):
         else:
             absent_list, stats = result, {}
 
-        debug_msg = f"\n(Debug: Checked {stats.get('total_employees', '?')} fail-safes against {stats.get('present_count', '?')} present on {stats.get('checked_date', '?')})"
+        # Helper to avoid ?
+        def safe_get(key): return stats.get(key, '?')
+
+        if 'error' in stats:
+             say(f"❌ *System Error*: {stats['error']}", thread_ts=message['ts'])
+             return
+
+        debug_msg = f"\n(Debug: Checked {safe_get('total_employees')} fail-safes against {safe_get('present_count')} present on {safe_get('checked_date')})"
 
         if not absent_list:
             say(f"✅ Everyone is present today! {debug_msg}", thread_ts=message['ts'])
