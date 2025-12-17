@@ -59,23 +59,40 @@ def mark_absent_employees(target_date=None):
         if not all_rows:
             return [], {"error": "Main Sheet is empty/blank"}
             
-        headers = all_rows[0]
-        # Normalize headers for finding (strip whitespace, lowercase)
-        norm_headers = [str(h).strip().lower() for h in headers]
+        # Scan first 20 rows for "Date" and "Name" columns
+        header_row_idx = -1
+        date_idx = -1
+        name_idx = -1
         
-        try:
-            # Allow common aliases
-            date_col_aliases = ["date", "timestamp", "time in"]
-            name_col_aliases = ["name", "employee name", "employee", "slack name"]
+        # Allow common aliases
+        date_col_aliases = ["date", "timestamp", "time in"]
+        name_col_aliases = ["name", "employee name", "employee", "slack name"]
+        
+        for i, row in enumerate(all_rows[:20]): # Check top 20 rows only
+            norm_row = [str(cell).strip().lower() for cell in row]
             
-            date_idx = next(i for i, h in enumerate(norm_headers) if h in date_col_aliases)
-            name_idx = next(i for i, h in enumerate(norm_headers) if h in name_col_aliases)
-        except StopIteration:
-            msg = f"Columns missing. Looked for Date/Name. Found: {headers}"
-            print(f"❌ {msg}")
-            return [], {"error": msg}
+            # Check if this row has BOTH target columns
+            found_date = any(h in date_col_aliases for h in norm_row)
+            found_name = any(h in name_col_aliases for h in norm_row)
+            
+            if found_date and found_name:
+                header_row_idx = i
+                # Find exact indices
+                # We need to be careful to pick the *first* match in the row
+                for col_i, cell_val in enumerate(norm_row):
+                    if date_idx == -1 and cell_val in date_col_aliases:
+                        date_idx = col_i
+                    if name_idx == -1 and cell_val in name_col_aliases:
+                        name_idx = col_i
+                break
+        
+        if header_row_idx == -1:
+             msg = f"Could not find a Header row with 'Date' and 'Name' in top 20 rows. Top row says: {all_rows[0]}"
+             print(f"❌ {msg}")
+             return [], {"error": msg}
 
-        attendance_records = all_rows[1:]
+        # Data starts after the header
+        attendance_records = all_rows[header_row_idx+1:]
         
         present_names = []
         for row in attendance_records:
