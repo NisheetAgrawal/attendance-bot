@@ -28,10 +28,12 @@ def mark_absent_employees(target_date=None):
         if not emp_rows: return [], {}
         
         emp_headers = emp_rows[0]
+        norm_emp_headers = [str(h).strip().lower() for h in emp_headers]
+        
         try:
-            name_idx = next(i for i, h in enumerate(emp_headers) if h.lower() == "name")
+            name_idx = next(i for i, h in enumerate(norm_emp_headers) if h in ["name", "employee name", "employee"])
         except StopIteration:
-             print("❌ Error: 'Name' column missing in Employees tab")
+             print(f"❌ Error: 'Name' column missing in Employees tab. Found: {emp_headers}")
              return [], {}
              
         all_names = [row[name_idx] for row in emp_rows[1:] if len(row) > name_idx and row[name_idx]]
@@ -58,12 +60,18 @@ def mark_absent_employees(target_date=None):
             return [], {}
             
         headers = all_rows[0]
-        # Find column indices (case-insensitive)
+        # Normalize headers for finding (strip whitespace, lowercase)
+        norm_headers = [str(h).strip().lower() for h in headers]
+        
         try:
-            date_idx = next(i for i, h in enumerate(headers) if h.lower() == "date")
-            name_idx = next(i for i, h in enumerate(headers) if h.lower() == "name")
+            # Allow common aliases
+            date_col_aliases = ["date", "timestamp", "time in"]
+            name_col_aliases = ["name", "employee name", "employee", "slack name"]
+            
+            date_idx = next(i for i, h in enumerate(norm_headers) if h in date_col_aliases)
+            name_idx = next(i for i, h in enumerate(norm_headers) if h in name_col_aliases)
         except StopIteration:
-            print("❌ Error: Could not find 'Date' or 'Name' columns in Sheet.")
+            print(f"❌ Error: Could not find Date/Name columns. Found headers: {headers}")
             return [], {}
 
         attendance_records = all_rows[1:]
