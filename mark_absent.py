@@ -156,7 +156,7 @@ def mark_absent_employees(target_date=None):
 
     # 4. Mark them as Absent (Red)
     for name in absent_names:
-        phone = next((e['Phone'] for e in employees if e['Name'] == name), "")
+        phone = ""
         
         handler.mark_attendance(
             date=current_date_str, 
