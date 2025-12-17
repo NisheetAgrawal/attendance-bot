@@ -87,11 +87,15 @@ def mark_absent_employees(target_date=None):
                 break
         
         if header_row_idx == -1:
-             msg = f"Could not find a Header row with 'Date' and 'Name' in top 20 rows. Top row says: {all_rows[0]}"
-             print(f"❌ {msg}")
-             return [], {"error": msg}
+             print("⚠️ Warning: Could not find headers. Defaulting to Col A (Date) and Col B (Name).")
+             # Fallback: Assume Data starts at Row 1 (after separator?) or just scan ALL rows safely
+             # standard Google Sheet structure is Row 1 = Header, but if shifted, we just search data.
+             header_row_idx = 0 
+             date_idx = 0
+             name_idx = 1
+             # We assume data is "Date, Name, ..."
 
-        # Data starts after the header
+        # Data starts after the header (or what we think is header)
         attendance_records = all_rows[header_row_idx+1:]
         
         present_names = []
