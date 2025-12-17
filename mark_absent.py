@@ -76,7 +76,7 @@ def mark_absent_employees(target_date=None):
     
     if not absent_names:
         print("✅ Everyone is present today!")
-        return
+        return []
 
     print(f"⚠️ Marking {len(absent_names)} people as Absent: {', '.join(absent_names)}")
 
@@ -96,6 +96,8 @@ def mark_absent_employees(target_date=None):
             color="red"
         )
         print(f"   - Marked {name} as Absent")
+        
+    return absent_names
 
 if __name__ == "__main__":
     mark_absent_employees()

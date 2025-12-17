@@ -97,6 +97,20 @@ def handle_attendance(message, say, logger):
     except Exception as e:
         say(f"❌ Error logging to sheet: {str(e)}", thread_ts=message['ts'])
 
+# Match "absent" (case insensitive, strict match)
+@app.message(re.compile(r"^\s*absent\s*$", re.IGNORECASE))
+def handle_absent_trigger(message, say):
+    say(f"🕵️‍♂️ Checking for absentees...", thread_ts=message['ts'])
+    try:
+        absent_list = mark_absent_employees()
+        if not absent_list:
+            say("✅ Everyone is present today!", thread_ts=message['ts'])
+        else:
+            names_str = ", ".join(absent_list)
+            say(f"🔴 Marked {len(absent_list)} people as Absent:\n{names_str}", thread_ts=message['ts'])
+    except Exception as e:
+        say(f"❌ Error running absentee check: {e}", thread_ts=message['ts'])
+
 @flask_app.route("/slack/events", methods=["POST"])
 def slack_events():
     return handler.handle(request)
