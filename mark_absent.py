@@ -24,8 +24,17 @@ def mark_absent_employees(target_date=None):
     # 1. Get all employees
     try:
         emp_sheet = handler.client.open_by_key(SHEET_ID).worksheet("Employees")
-        employees = emp_sheet.get_all_records()
-        all_names = [e['Name'] for e in employees if e['Name']]
+        emp_rows = emp_sheet.get_all_values()
+        if not emp_rows: return [], {}
+        
+        emp_headers = emp_rows[0]
+        try:
+            name_idx = next(i for i, h in enumerate(emp_headers) if h.lower() == "name")
+        except StopIteration:
+             print("❌ Error: 'Name' column missing in Employees tab")
+             return [], {}
+             
+        all_names = [row[name_idx] for row in emp_rows[1:] if len(row) > name_idx and row[name_idx]]
     except Exception as e:
         print(f"❌ Error fetching employees: {e}")
         return [], {}
@@ -42,14 +51,34 @@ def mark_absent_employees(target_date=None):
     print(f"DEBUG: Checking attendance for Date: {current_date_str}")
     
     try:
-        attendance_records = handler.sheet.get_all_records()
-        # Debug: Print first few records
-        # print(f"DEBUG: First record date: {attendance_records[0]['Date']}")
+        # Use get_all_values() to avoid "Duplicate Header" errors from gspread
+        all_rows = handler.sheet.get_all_values()
+        if not all_rows:
+            print("❌ Error: Sheet is empty")
+            return [], {}
+            
+        headers = all_rows[0]
+        # Find column indices (case-insensitive)
+        try:
+            date_idx = next(i for i, h in enumerate(headers) if h.lower() == "date")
+            name_idx = next(i for i, h in enumerate(headers) if h.lower() == "name")
+        except StopIteration:
+            print("❌ Error: Could not find 'Date' or 'Name' columns in Sheet.")
+            return [], {}
+
+        attendance_records = all_rows[1:]
         
-        present_names = [
-            r['Name'] for r in attendance_records 
-            if str(r['Date']).strip() == current_date_str
-        ]
+        present_names = []
+        for row in attendance_records:
+            # Safety check for row length
+            if len(row) <= max(date_idx, name_idx): continue
+            
+            row_date = row[date_idx]
+            row_name = row[name_idx]
+            
+            if str(row_date).strip() == current_date_str:
+                present_names.append(row_name)
+
         print(f"DEBUG: Found {len(present_names)} present: {present_names}")
     except Exception as e:
         print(f"❌ Error fetching attendance: {e}")
