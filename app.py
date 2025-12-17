@@ -35,10 +35,10 @@ logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 scheduler = BackgroundScheduler()
 timezone = pytz.timezone('Asia/Kolkata')
 
-# Run every day at 8:00 PM (20:00) IST
-scheduler.add_job(func=mark_absent_employees, trigger="cron", hour=20, minute=0, timezone=timezone)
+# Run every day at 4:00 PM (16:00) IST
+scheduler.add_job(func=mark_absent_employees, trigger="cron", hour=16, minute=0, timezone=timezone)
 scheduler.start()
-print("⏰ Scheduler started: Will mark absentees everyday at 20:00 IST")
+print("⏰ Scheduler started: Will mark absentees everyday at 16:00 IST")
 
 @flask_app.route("/trigger-absent", methods=["GET"])
 def manual_absent_trigger():
@@ -97,8 +97,8 @@ def handle_attendance(message, say, logger):
     except Exception as e:
         say(f"❌ Error logging to sheet: {str(e)}", thread_ts=message['ts'])
 
-# Match "absent" (case insensitive, strict match)
-@app.message(re.compile(r"^\s*absent\s*$", re.IGNORECASE))
+# Match "mark absent" (case insensitive, strict match)
+@app.message(re.compile(r"^\s*mark\s+absent\s*$", re.IGNORECASE))
 def handle_absent_trigger(message, say):
     say(f"🕵️‍♂️ Checking for absentees...", thread_ts=message['ts'])
     try:
