@@ -31,26 +31,35 @@ def mark_absent_employees(target_date=None):
         return
 
     # 2. Get attendance for target date
+    import pytz
+    tz = pytz.timezone('Asia/Kolkata')
+    
     if target_date:
         current_date_str = target_date
     else:
-        current_date_str = datetime.now().strftime("%Y-%m-%d")
+        current_date_str = datetime.now(tz).strftime("%Y-%m-%d")
+        
+    print(f"DEBUG: Checking attendance for Date: {current_date_str}")
+    
     try:
         attendance_records = handler.sheet.get_all_records()
+        # Debug: Print first few records
+        # print(f"DEBUG: First record date: {attendance_records[0]['Date']}")
+        
         present_names = [
             r['Name'] for r in attendance_records 
-        if str(r['Date']) == current_date_str
+            if str(r['Date']).strip() == current_date_str
         ]
+        print(f"DEBUG: Found {len(present_names)} present: {present_names}")
     except Exception as e:
         print(f"❌ Error fetching attendance: {e}")
-        return
+        return []
 
     # 3. Find missing people
     # Improved Fuzzy Matching Logic
     absent_names = []
     
     # Pre-process lists for comparison
-    # Structure: {'clean_name': 'Original Name'}
     present_map = {name.lower().strip(): name for name in present_names}
     
     for emp_name in all_names:
@@ -59,14 +68,11 @@ def mark_absent_employees(target_date=None):
         
         # Check against all present names
         for present_clean in present_map.keys():
-            # Match 1: Exact Match
             if emp_clean == present_clean:
                 is_present = True
                 break
             
-            # Match 2: Substring Match (e.g., "Akash" in "Akash Das")
-            # We check both ways: if Slack name is part of Sheet name OR Sheet name is part of Slack name
-            if len(emp_clean) > 3 and len(present_clean) > 3: # Safety to prevent "Al" matching "Alan" falsely too easily
+            if len(emp_clean) > 3 and len(present_clean) > 3: 
                 if emp_clean in present_clean or present_clean in emp_clean:
                     is_present = True
                     break
@@ -82,11 +88,8 @@ def mark_absent_employees(target_date=None):
 
     # 4. Mark them as Absent (Red)
     for name in absent_names:
-        # Find phone number if available (optional)
         phone = next((e['Phone'] for e in employees if e['Name'] == name), "")
         
-        # Log as Absent
-        # We use a special time or leave it empty
         handler.mark_attendance(
             date=current_date_str, 
             name=name, 
