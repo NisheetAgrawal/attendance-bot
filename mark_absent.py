@@ -14,12 +14,12 @@ def mark_absent_employees(target_date=None):
     SHEET_ID = os.getenv("SHEET_ID")
     if not SHEET_ID:
         print("❌ Error: SHEET_ID not found in .env")
-        return
+        return [], {}
 
     handler = SheetsHandler("credentials.json", SHEET_ID)
     if not handler.sheet:
         print("❌ Error: Could not connect to sheet.")
-        return
+        return [], {}
 
     # 1. Get all employees
     try:
@@ -28,7 +28,7 @@ def mark_absent_employees(target_date=None):
         all_names = [e['Name'] for e in employees if e['Name']]
     except Exception as e:
         print(f"❌ Error fetching employees: {e}")
-        return
+        return [], {}
 
     # 2. Get attendance for target date
     import pytz
@@ -53,7 +53,7 @@ def mark_absent_employees(target_date=None):
         print(f"DEBUG: Found {len(present_names)} present: {present_names}")
     except Exception as e:
         print(f"❌ Error fetching attendance: {e}")
-        return []
+        return [], {}
 
     # 3. Find missing people
     # Improved Fuzzy Matching Logic
@@ -80,9 +80,18 @@ def mark_absent_employees(target_date=None):
         if not is_present:
             absent_names.append(emp_name)
     
+    stats = {
+        "total_employees": len(all_names),
+        "present_count": len(present_names),
+        "absent_count": len(absent_names),
+        "checked_date": current_date_str,
+        "sample_employee": all_names[0] if all_names else "None",
+        "sample_present": present_names[0] if present_names else "None"
+    }
+
     if not absent_names:
         print("✅ Everyone is present today!")
-        return []
+        return [], stats
 
     print(f"⚠️ Marking {len(absent_names)} people as Absent: {', '.join(absent_names)}")
 
@@ -100,7 +109,10 @@ def mark_absent_employees(target_date=None):
         )
         print(f"   - Marked {name} as Absent")
         
-    return absent_names
+    return absent_names, stats
+
+if __name__ == "__main__":
+    mark_absent_employees()
 
 if __name__ == "__main__":
     mark_absent_employees()

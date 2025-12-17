@@ -103,12 +103,22 @@ def handle_absent_trigger(message, say, logger):
     logger.info(f"received 'mark absent' trigger from user {message['user']}")
     try:
         say(f"🕵️‍♂️ Checking for absentees...", thread_ts=message['ts'])
-        absent_list = mark_absent_employees()
+        # Expecting tuple (list, dict) now
+        result = mark_absent_employees()
+        
+        # Handle backward compatibility if it returns just list (safety)
+        if isinstance(result, tuple):
+            absent_list, stats = result
+        else:
+            absent_list, stats = result, {}
+
+        debug_msg = f"\n(Debug: Checked {stats.get('total_employees', '?')} fail-safes against {stats.get('present_count', '?')} present on {stats.get('checked_date', '?')})"
+
         if not absent_list:
-            say("✅ Everyone is present today!", thread_ts=message['ts'])
+            say(f"✅ Everyone is present today! {debug_msg}", thread_ts=message['ts'])
         else:
             names_str = ", ".join(absent_list)
-            say(f"🔴 Marked {len(absent_list)} people as Absent:\n{names_str}", thread_ts=message['ts'])
+            say(f"🔴 Marked {len(absent_list)} people as Absent:\n{names_str} {debug_msg}", thread_ts=message['ts'])
     except Exception as e:
         logger.error(f"Failed to handle absent trigger: {e}")
         say(f"❌ Error running absentee check: {e}", thread_ts=message['ts'])
