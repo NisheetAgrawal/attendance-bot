@@ -27,17 +27,28 @@ def mark_absent_employees(target_date=None):
         emp_rows = emp_sheet.get_all_values()
         if not emp_rows: return [], {}
         
-        emp_headers = emp_rows[0]
-        norm_emp_headers = [str(h).strip().lower() for h in emp_headers]
+        # Scan first 20 rows for "Name" column in Employees sheet
+        emp_header_idx = -1
+        name_idx = -1
         
-        try:
-            name_idx = next(i for i, h in enumerate(norm_emp_headers) if h in ["name", "employee name", "employee"])
-        except StopIteration:
-             msg = f"'Name' col missing in Employees. Found: {emp_headers}"
+        for i, row in enumerate(emp_rows[:20]):
+            norm_row = [str(cell).strip().lower() for cell in row]
+            if any(h in ["name", "employee name", "employee"] for h in norm_row):
+                emp_header_idx = i
+                # Find exact index
+                for col_i, cell_val in enumerate(norm_row):
+                    if cell_val in ["name", "employee name", "employee"]:
+                        name_idx = col_i
+                        break
+                break
+        
+        if emp_header_idx == -1:
+             msg = f"'Name' col missing in Employees (Checked top 20 rows). Top row: {emp_rows[0]}"
              print(f"❌ {msg}")
              return [], {"error": msg}
              
-        all_names = [row[name_idx] for row in emp_rows[1:] if len(row) > name_idx and row[name_idx]]
+        all_names = [row[name_idx] for row in emp_rows[emp_header_idx+1:] if len(row) > name_idx and row[name_idx]]
+        print(f"DEBUG: Found {len(all_names)} employees: {all_names}")
     except Exception as e:
         print(f"❌ Error fetching employees: {e}")
         return [], {}
